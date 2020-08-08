@@ -72,7 +72,8 @@ function addLoop() {
     //Create the circle that represents the loop
     createCircle(loop);
     //Draw loops on screen again
-    drawLoops();
+    drawLoops(loop);
+    drawCircles();
   }
 }
 
@@ -92,6 +93,30 @@ function drawLoops() {
     mainContext.stroke();
   }
   mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
+}
+
+function drawCircles() {
+
+  let loopsRadius = new Array();
+
+  for (loop in loops) {
+    loopsRadius.push(loops[loop].radius)
+  }
+
+  for (circle in circles) {
+    mainContext.beginPath();
+    mainContext.arc(
+      circles[circle].initialX,
+      circles[circle].initialY-loopsRadius[parseInt(circle)],
+      circles[circle].radius,
+      0,
+      Math.PI * 2,
+      false
+    );
+    mainContext.closePath();
+    mainContext.fillStyle = "rgba(177, 0, 129, .1)";
+    mainContext.fill();
+  }
 }
 
 function start(finalValue) {
@@ -154,7 +179,6 @@ function draw() {
     let circle = circles[i];
     circle.update();
   }
-
   // call the draw function again!
   requestAnimationFrame(draw);
 }
