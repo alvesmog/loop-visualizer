@@ -7,14 +7,23 @@ let canvasHeight = mainCanvas.height;
 //Array que contém todos os circulos criados
 let circles = new Array();
 
-function Circle(angle, sign, radius, rotationRadius, initialX, initialY) {
+function Circle(
+  angle,
+  sign,
+  radius,
+  rotationRadius,
+  initialX,
+  initialY,
+  firstLoop
+) {
   this.angle = angle;
   this.sign = sign;
   this.radius = radius;
   this.rotationRadius = rotationRadius;
   this.initialX = initialX;
   this.initialY = initialY;
-  this.incrementer = 0.01;
+  this.incrementer = 0.02;
+  this.firstLoop = firstLoop;
 }
 
 let loops = new Array();
@@ -96,25 +105,52 @@ function drawLoops() {
 }
 
 function drawCircles() {
-
   let loopsRadius = new Array();
 
   for (loop in loops) {
-    loopsRadius.push(loops[loop].radius)
+    loopsRadius.push(loops[loop].radius);
   }
 
   for (circle in circles) {
+    console.log(circle);
+
+    if (circle === "0") {
+      initialX = circles[circle].initialX;
+      initialY = circles[circle].initialY - loopsRadius[parseInt(circle)];
+    } else {
+      initialX = circles[circle].initialX - loopsRadius[parseInt(circle)];
+      initialY = circles[circle].initialY;
+    }
+
     mainContext.beginPath();
     mainContext.arc(
-      circles[circle].initialX,
-      circles[circle].initialY-loopsRadius[parseInt(circle)],
+      initialX,
+      initialY,
       circles[circle].radius,
       0,
       Math.PI * 2,
       false
     );
     mainContext.closePath();
-    mainContext.fillStyle = "rgba(177, 0, 129, .1)";
+    mainContext.fillStyle = "rgba(177, 0, 129, .5)";
+    mainContext.fill();
+  }
+}
+
+function keepCircles() {
+  for (let i = 0; i < circles.length; i++) {
+    let circle = circles[i];
+    mainContext.beginPath();
+    mainContext.arc(
+      circle.currentX,
+      circle.currentY,
+      circle.radius,
+      0,
+      Math.PI * 2,
+      false
+    );
+    mainContext.closePath();
+    mainContext.fillStyle = "rgba(80, 50, 129, .8)";
     mainContext.fill();
   }
 }
@@ -130,12 +166,21 @@ Circle.prototype.update = function () {
   this.currentX = this.initialX + this.rotationRadius * Math.cos(this.angle);
   this.currentY = this.initialY + this.rotationRadius * Math.sin(this.angle);
 
-  if (this.angle >= Math.PI * 2) {
+  /*   if (this.firstLoop) {
+    //console.log(this.firstLoop)
+    initialAngle = 3*Math.PI/2
+  } else {
+    //console.log(this.firstLoop)
+    initialAngle = Math.PI
+  } */
+
+  if (this.angle >= 2 * Math.PI) {
     this.angle = 0;
     this.incrementer = 0.01;
   }
 
   // The following code is responsible for actually drawing the circle on the screen
+
   mainContext.beginPath();
   mainContext.arc(
     this.currentX,
@@ -148,6 +193,7 @@ Circle.prototype.update = function () {
   mainContext.closePath();
   mainContext.fillStyle = "rgba(177, 0, 129, .1)";
   mainContext.fill();
+  //console.log("Fez update")
 };
 
 function createCircle(loop) {
@@ -155,8 +201,17 @@ function createCircle(loop) {
   let initialX = loop.x;
   let initialY = loop.y;
   let rotationRadius = loop.radius;
-  let angle = (3 * Math.PI) / 2;
+  let angle;
   let sign = 1;
+  let firstLoop;
+
+  if (loops.length > 1) {
+    angle = Math.PI; //Loop > 0
+    firstLoop = false;
+  } else {
+    angle = (3 * Math.PI) / 2; //Loop 0
+    firstLoop = true;
+  }
 
   // create the Circle object
   let circle = new Circle(
@@ -165,20 +220,89 @@ function createCircle(loop) {
     radius,
     rotationRadius,
     initialX,
-    initialY
+    initialY,
+    firstLoop
   );
   circles.push(circle);
+  lastLoop = circles.length-1;
 }
+
+let firstLoop = 0;
+let currentLoop = 0;
+let lastLoop;
+let direction = "right";
 
 function draw() {
   mainContext.clearRect(0, 0, canvasWidth, canvasHeight);
   mainContext.fillStyle = "rgba(255, 255, 255, 0.1)";
   mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
   drawLoops();
+
+  if (currentLoop != lastLoop) {
+    let circle = circles[currentLoop];
+    let nextCircle = circles[currentLoop + 1];
+    if (
+      circle.angle + Math.PI != nextCircle.angle &&
+      nextCircle.angle == Math.PI
+    ) {
+      circle.update();
+    } else {
+      currentLoop++;
+    }
+  } else {
+    //console.log("Current loop é o last loop")
+    let circle = circles[currentLoop];
+    //console.log(circle)
+    let nextCircle = circles[currentLoop - 1];
+    //console.log(nextCircle)
+    if (
+      circle.angle + Math.PI != nextCircle.angle &&
+      nextCircle.angle == Math.PI
+    ) {
+      circle.update();
+    } else {
+      currentLoop--;
+    }
+  }
+
+  keepCircles();
+
+  //nextCircle.update();
+
+  /*   //Left to right
   for (let i = 0; i < circles.length; i++) {
     let circle = circles[i];
-    circle.update();
+    let nextCircle = circles[i + 1];
+    if (i+1 < circles.length) {
+      while (circle.angle > nextCircle.angle) {
+        console.log("chamou update no normal")
+        circle.update();
+      }
+    }
+    if ((i == circles.length - 1)) {
+      console.log("Voltando")
+      backToStart();
+    }
   }
+
+  function backToStart() {
+    //Right to left
+    for (let i = circles.length - 1; i > 0; i--) {
+      console.log("back to start nivel 1")
+      let circle = circles[i];
+      let nextCircle = circles[i - 1];
+      if (i-1 >= 0) {
+        console.log("back to start nivel 2")
+        while (circle.angle > nextCircle.angle+Math.PI) {
+          console.log("chamou update no back to start")
+          circle.update();
+        }
+      }
+    }
+  }
+
+  console.log("Finalizou 1 frame") */
+
   // call the draw function again!
   requestAnimationFrame(draw);
 }
