@@ -259,7 +259,7 @@ function start() {
     let currentCircle;
     let nextCircle;
 
-      if(i<circles.length) {
+      if(i<circles.length-1) {
         currentCircle = circles[i];
         nextCircle = circles[i+1];
       } else {
@@ -267,11 +267,15 @@ function start() {
         nextCircle = circles[i-1];
       }
 
-      if(circles[i].activate) {
+      // loop > 0, passa pro proximo no  current+PI
+      //loop = 0, passa pro proximo no current+PI
+
+      if(currentCircle.activate) {
         //O status é activate
         //Checar se já está na hora de desativar e ativar o proximo
         //Se estiver, desativa e ativa o proximo
-        if(currentCircle.currentCycle >= currentCircle.finalCycle*(2*Math.PI)) { //Já concluiu seu ciclo, desativa e ativa o proximo
+        //Verifica se é o last loop da serie
+        if(currentCircle.currentCycle >= currentCircle.finalCycle*(2*Math.PI) || currentCircle.angle+Math.PI == nextCircle.angle) { //Já concluiu seu ciclo, desativa e ativa o proximo
           currentCircle.activate = false;
           nextCircle.activate = true;
         } else { //Ainda não concluiu seu ciclo, continua atualizando
@@ -279,7 +283,7 @@ function start() {
         }
       }
   }
-
+  
   function cycleLoop(circle) {
     if(circle.currentCycle<=circle.finalCycle*(2*Math.PI)) {
       circle.update();
