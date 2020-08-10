@@ -9,21 +9,29 @@ let circles = new Array();
 
 function Circle(
   angle,
+  finalAngle,
+  finalCycle,
+  currentCycle,
   sign,
   radius,
   rotationRadius,
   initialX,
   initialY,
-  firstLoop
+  firstLoop,
+  activate
 ) {
   this.angle = angle;
+  this.finalAngle = finalAngle;
+  this.finalCycle = finalCycle;
+  this.currentCycle = currentCycle;
   this.sign = sign;
   this.radius = radius;
   this.rotationRadius = rotationRadius;
   this.initialX = initialX;
   this.initialY = initialY;
-  this.incrementer = 0.02;
+  this.incrementer = 0.01;
   this.firstLoop = firstLoop;
+  this.activate = activate;
 }
 
 let loops = new Array();
@@ -47,7 +55,7 @@ window.onload = () => {
 };
 
 function addLoop() {
-  console.log("Chamou Add Loop");
+  //console.log("Chamou Add Loop");
 
   let x, y, radius;
 
@@ -56,7 +64,7 @@ function addLoop() {
   //If it's not zero, calculate the atributes based on the last loop in the loops array
 
   if (loops.length != 0 && loops.length < 6) {
-    console.log(loops.length);
+    //console.log(loops.length);
     let lastLoopRadius = loops[loops.length - 1].radius;
     let lastLoopY = loops[loops.length - 1].y;
     let lastLoopX = loops[loops.length - 1].x;
@@ -66,7 +74,7 @@ function addLoop() {
     y = lastLoopY;
     createAndDrawLoop();
   } else if (loops.length === 0) {
-    console.log(loops.length);
+    //console.log(loops.length);
     //Use default values
     x = 250;
     y = 300;
@@ -112,7 +120,7 @@ function drawCircles() {
   }
 
   for (circle in circles) {
-    console.log(circle);
+    //console.log(circle);
 
     if (circle === "0") {
       initialX = circles[circle].initialX;
@@ -155,24 +163,12 @@ function keepCircles() {
   }
 }
 
-function start(finalValue) {
-  console.log("Chamou Start");
-  requestAnimationFrame(draw);
-}
-
 Circle.prototype.update = function () {
   this.angle += this.incrementer;
+  this.currentCycle += this.incrementer;
 
   this.currentX = this.initialX + this.rotationRadius * Math.cos(this.angle);
   this.currentY = this.initialY + this.rotationRadius * Math.sin(this.angle);
-
-  /*   if (this.firstLoop) {
-    //console.log(this.firstLoop)
-    initialAngle = 3*Math.PI/2
-  } else {
-    //console.log(this.firstLoop)
-    initialAngle = Math.PI
-  } */
 
   if (this.angle >= 2 * Math.PI) {
     this.angle = 0;
@@ -202,26 +198,37 @@ function createCircle(loop) {
   let initialY = loop.y;
   let rotationRadius = loop.radius;
   let angle;
+  let finalAngle;
+  let finalCycle = 1; //temporarily set to 1, will be dynamic in the future
+  let currentCycle = 0;
   let sign = 1;
   let firstLoop;
 
   if (loops.length > 1) {
     angle = Math.PI; //Loop > 0
+    finalAngle = Math.PI
     firstLoop = false;
+    activate = false;
   } else {
     angle = (3 * Math.PI) / 2; //Loop 0
+    finalAngle = (3 * Math.PI) / 2;
     firstLoop = true;
+    activate = true;
   }
 
   // create the Circle object
   let circle = new Circle(
     angle,
+    finalAngle,
+    finalCycle,
+    currentCycle,
     sign,
     radius,
     rotationRadius,
     initialX,
     initialY,
-    firstLoop
+    firstLoop,
+    activate,
   );
   circles.push(circle);
   lastLoop = circles.length-1;
@@ -231,78 +238,64 @@ let firstLoop = 0;
 let currentLoop = 0;
 let lastLoop;
 let direction = "right";
+let finalValue = 3;
+let cycle = 0;
 
-function draw() {
+
+function start() {
+  //console.log("Chamou Start");
+
+  //We will iterate over the circles array and determine which circle is to be updated at the time
+  //Take the first loop and update it's state until it's circle position matches the next loop's circle position
+  //entra no for, atualiza até chegar no proximo
+  //entra no proximo, atualiza até chegar no proximo
+  //...
+  //quando chegar no ultimo, continua até terminar a atualização
+  //novo atributo no circle: ativate (bool) ok
+  //no caso do firstLoop, quando o angulo dele for igual ao inicial do proximo: != activate e ativar no proximo
+
+  for (let i = 0; i < circles.length; i++) {
+
+    let currentCircle;
+    let nextCircle;
+
+      if(i<circles.length) {
+        currentCircle = circles[i];
+        nextCircle = circles[i+1];
+      } else {
+        currentCircle = circles[i];
+        nextCircle = circles[i-1];
+      }
+
+      if(circles[i].activate) {
+        //O status é activate
+        //Checar se já está na hora de desativar e ativar o proximo
+        //Se estiver, desativa e ativa o proximo
+        if(currentCircle.currentCycle >= currentCircle.finalCycle*(2*Math.PI)) { //Já concluiu seu ciclo, desativa e ativa o proximo
+          currentCircle.activate = false;
+          nextCircle.activate = true;
+        } else { //Ainda não concluiu seu ciclo, continua atualizando
+          cycleLoop(currentCircle)
+        }
+      }
+  }
+
+  function cycleLoop(circle) {
+    if(circle.currentCycle<=circle.finalCycle*(2*Math.PI)) {
+      circle.update();
+    }
+  }
+  requestAnimationFrame(draw);
+}
+
+function draw() { //Represents the current state of the circles array
   mainContext.clearRect(0, 0, canvasWidth, canvasHeight);
   mainContext.fillStyle = "rgba(255, 255, 255, 0.1)";
   mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
   drawLoops();
 
-  if (currentLoop != lastLoop) {
-    let circle = circles[currentLoop];
-    let nextCircle = circles[currentLoop + 1];
-    if (
-      circle.angle + Math.PI != nextCircle.angle &&
-      nextCircle.angle == Math.PI
-    ) {
-      circle.update();
-    } else {
-      currentLoop++;
-    }
-  } else {
-    //console.log("Current loop é o last loop")
-    let circle = circles[currentLoop];
-    //console.log(circle)
-    let nextCircle = circles[currentLoop - 1];
-    //console.log(nextCircle)
-    if (
-      circle.angle + Math.PI != nextCircle.angle &&
-      nextCircle.angle == Math.PI
-    ) {
-      circle.update();
-    } else {
-      currentLoop--;
-    }
-  }
-
   keepCircles();
 
-  //nextCircle.update();
-
-  /*   //Left to right
-  for (let i = 0; i < circles.length; i++) {
-    let circle = circles[i];
-    let nextCircle = circles[i + 1];
-    if (i+1 < circles.length) {
-      while (circle.angle > nextCircle.angle) {
-        console.log("chamou update no normal")
-        circle.update();
-      }
-    }
-    if ((i == circles.length - 1)) {
-      console.log("Voltando")
-      backToStart();
-    }
-  }
-
-  function backToStart() {
-    //Right to left
-    for (let i = circles.length - 1; i > 0; i--) {
-      console.log("back to start nivel 1")
-      let circle = circles[i];
-      let nextCircle = circles[i - 1];
-      if (i-1 >= 0) {
-        console.log("back to start nivel 2")
-        while (circle.angle > nextCircle.angle+Math.PI) {
-          console.log("chamou update no back to start")
-          circle.update();
-        }
-      }
-    }
-  }
-
-  console.log("Finalizou 1 frame") */
-
   // call the draw function again!
-  requestAnimationFrame(draw);
+  requestAnimationFrame(start);
 }
